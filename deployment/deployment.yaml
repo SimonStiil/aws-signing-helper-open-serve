@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-signing-helper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-signing-helper
+  template:
+    metadata:
+      labels:
+        app: aws-signing-helper
+    spec:
+      containers:
+        - name: aws-signing-helper
+          image: ghcr.io/simonstiil/aws-signing-helper-open-serve:latest
+          env:
+            - name: TRUST_ANCHOR_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: TRUST_ANCHOR_ARN
+            - name: PROFILE_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: PROFILE_ARN
+            - name: ROLE_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: ROLE_ARN
+            - name: CERTIFICATE
+              value: /etc/certs/tls.crt
+            - name: PRIVATE_KEY
+              value: /etc/certs/tls.key
+          ports:
+            - containerPort: 9911
+          volumeMounts:
+            - name: cert-volume
+              mountPath: /etc/certs
+              readOnly: true
+      volumes:
+        - name: cert-volume
+          secret:
+            secretName: iamra-ss-cert
