@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-signing-helper-env
+  namespace: cert-manager
+data:
+  TRUST_ANCHOR_ARN: "arn:aws:rolesanywhere:eu-central-1:039612861656:trust-anchor/578c461d-1716-4dcf-996b-48cca1223133"
+  PROFILE_ARN: "arn:aws:rolesanywhere:eu-central-1:039612861656:profile/570b9c8a-b632-493d-821a-c0078192fbc1"
+  ROLE_ARN: "arn:aws:iam::039612861656:role/SelfManagedCARole"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-signing-helper
+  namespace: cert-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-signing-helper
+  template:
+    metadata:
+      labels:
+        app: aws-signing-helper
+    spec:
+      containers:
+        - name: aws-signing-helper
+          image: ghcr.io/simonstiil/aws-signing-helper:latest
+          ports:
+            - containerPort: 9911
+          env:
+            - name: TRUST_ANCHOR_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: TRUST_ANCHOR_ARN
+            - name: PROFILE_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: PROFILE_ARN
+            - name: ROLE_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: aws-signing-helper-env
+                  key: ROLE_ARN
+            - name: CERTIFICATE
+              value: /etc/certs/tls.crt
+            - name: PRIVATE_KEY
+              value: /etc/certs/tls.key
+          volumeMounts:
+            - name: cert-volume
+              mountPath: /etc/certs
+              readOnly: true
+      volumes:
+        - name: cert-volume
+          secret:
+            secretName: iamra-ss-cert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-signing-helper
+  namespace: cert-manager
+spec:
+  selector:
+    app: aws-signing-helper
+  ports:
+    - protocol: TCP
+      port: 9911
+      targetPort: 9911
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aws-cli-test
+  namespace: cert-manager
+spec:
+  containers:
+    - name: aws-cli
+      image: amazon/aws-cli:latest
+      env:
+        - name: AWS_EC2_METADATA_SERVICE_ENDPOINT
+          value: "http://aws-signing-helper.cert-manager.svc.cluster.local:9911"
+      command: ["/bin/bash", "-c", "sleep 7776000"]

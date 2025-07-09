@@ -1,0 +1,16 @@
+extraEnv:
+- name: AWS_PROFILE
+  value: 'default'
+- name: AWS_REGION
+  value: 'eu-central-1'
+crds:
+  enabled: true
+volumes:
+- name: aws-signing-helper
+  secret:
+    secretName: aws-signing-helper
+    optional: true
+volumeMounts:
+- name: aws-signing-helper
+  mountPath: "/.aws"
+  readOnly: true
