@@ -1,0 +1,8 @@
+
+apiVersion: awspca.cert-manager.io/v1beta1
+kind: AWSPCAClusterIssuer
+metadata:
+  name: pca-issuer
+spec:
+  arn: arn:aws:acm-pca:eu-central-1:....:certificate-authority/....
+  region: eu-central-1

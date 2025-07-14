@@ -1,0 +1,4 @@
+replicaCount: 1
+env:
+  AWS_EC2_METADATA_SERVICE_ENDPOINT: "http://aws-signing-helper.cert-manager.svc.cluster.local:9911/"
+  AWS_REGION: "eu-central-1"

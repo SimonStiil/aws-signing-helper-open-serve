@@ -64,3 +64,29 @@ With ARN's and Certificate we are not ready to convert these to a token. This is
 [aws_signing_helper](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/credential-helper.html) that have several processes forgetting credentials.
 In this repository we have an example with a docker container that is more open then the regular one. Go to [`deployment`](../deployment) for an example in how to deploy this to kubernetes.
 There is also an alternative to convert the credential file to a secret in [secret-updater](https://github.com/SimonStiil/aws-signing-helper-secret-updater).
+
+## Example usecase
+In a company they use a AWS Private CA in a central account. This is then shared with other organization corporate accounts. I would like to issue certificates form my on-premises cluster using this CA
+
+First i do all of the setup in [`iam-ra`](./iam-ra/) to deploy the aws-signing-helper in my cert-manager namespace.
+
+For issuing certificates [aws-privateca-issuer](https://github.com/cert-manager/aws-privateca-issuer) can do this for us.
+It needs to be configured in a way where it is possible to utilize the `AWS_EC2_METADATA_SERVICE_ENDPOINT` setup.
+
+```bash
+helm repo add awspca https://cert-manager.github.io/aws-privateca-issuer
+helm upgrade --install aws-privateca-issuer awspca/aws-privateca-issuer --namespace cert-manager --values aws-private-ca/aws-privateca-issuer-values.yaml
+```
+
+There we setup where to find the endpoint and what region to use. Substitute with your own region.
+You need to set region in either env or issuer. [`aws-issuer.yaml`](./aws-private-ca/aws-issuer.yaml) substitute arn with the arn of your aws-acm-pca.
+
+There are limitations when using aws-privateca-issuer That need to be additionally configured when using annotations. 
+Usually you only need `cert-manager.io/issuer` but to use this as a cluster issuer you need both `cert-manager.io/issuer-kind` and `cert-manager.io/issuer-group`. As this is a "Shared" aws-acm-pca, we also need to tell cert-manager the type of certificate to issue with `cert-manager.io/usages`.
+```yaml
+    cert-manager.io/issuer: "pca-issuer"
+    cert-manager.io/issuer-kind: AWSPCAClusterIssuer
+    cert-manager.io/issuer-group: awspca.cert-manager.io
+    cert-manager.io/usages: "server auth,client auth"
+```
+An example of this can be seen in [`whoami.yaml`](./aws-private-ca/whoami.yaml)
