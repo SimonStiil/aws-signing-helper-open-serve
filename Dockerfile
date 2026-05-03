@@ -5,7 +5,7 @@ RUN apk add --no-cache bash libc6-compat
 FROM golang:1.26.2-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache make git bash gcc musl-dev && \
-    git clone --branch v1.8.1 --depth 1 https://github.com/aws/rolesanywhere-credential-helper.git . && \
+    git clone --branch v1.8.2 --depth 1 https://github.com/aws/rolesanywhere-credential-helper.git . && \
     sed -i 's|fmt.Sprintf("%s:%d", LocalHostAddress, endpoint.PortNum)|fmt.Sprintf("%s:%d", "", endpoint.PortNum)|' aws_signing_helper/serve.go && \
     sed -i 's|log.Println("Local server started on port:"|log.Println("Local(patched) server started on port:"|' aws_signing_helper/serve.go && \
     make release
