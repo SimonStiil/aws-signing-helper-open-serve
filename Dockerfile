@@ -2,7 +2,7 @@ FROM alpine:3.23.4 AS base
 WORKDIR /app
 RUN apk add --no-cache bash libc6-compat 
 
-FROM golang:1.26.2-alpine AS builder
+FROM golang:1.26.5-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache make git bash gcc musl-dev && \
     git clone --branch v1.8.2 --depth 1 https://github.com/aws/rolesanywhere-credential-helper.git . && \
